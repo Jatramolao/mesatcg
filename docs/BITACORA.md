@@ -23,6 +23,28 @@ Registro cronológico de lo hecho, los impedimentos y el uso de IA. Agrega una e
 - *Corregido:* stack del documento original (JS → Python) y redacción de la bitácora. El caso del −1 quedó cubierto por una prueba antes de escribir el código.
 - *Descartado:* cuentas de usuario y juego en línea (fuera del Sprint Goal). También el guardado en `localStorage` o MongoDB, porque adelantaría HU-03.
 
+---
+
+## 2026-11-06 · Sesión 2: revisión anti-slop y diseño visual
+
+**Hecho**
+- Repositorio público en GitHub (`Jatramolao/mesatcg`) con el primer commit del incremento.
+- Revisión anti-slop de la interfaz y la documentación:
+  - Emoji del anuncio de ganador eliminado; emojis decorativos y rayas largas fuera del README y la trazabilidad (los estados ahora se escriben con palabras).
+  - Un solo color de acento (antes eran tres: ámbar, verde y rojo).
+  - Una sola forma (antes había tres radios distintos).
+  - −1 y +1 distinguibles por forma, no solo por color.
+  - Foco visible para teclado.
+  - Estado vacío del dado con instrucción, en vez de un guion suelto.
+  - Fuentes genéricas del sistema reemplazadas por fuentes autoalojadas.
+- Look and feel de campo de batalla medieval brutalista: Grenze Gotisch + Big Shoulders Stencil, paleta hierro y brasa, placas biseladas.
+- Nueva prueba `tests/test_interfaz.py` (RNF-03): la página y las fuentes se sirven sin servicios externos. Total: **34/34 en verde**.
+
+**Uso de IA**
+- *Con IA:* auditoría anti-slop y rediseño visual con Claude Code.
+- *Corregido:* al probar, la IA usó nombres de personajes de una franquicia conocida como datos de ejemplo. Se reemplazaron por nombres neutros, porque la dirección visual es de género y no debe copiar una obra.
+- *Descartado:* texturas e imágenes de fondo (agregan peso y complejidad sin mejorar el uso en la mesa).
+
 **Pendiente**
 - [ ] Probar en un celular real (DoD 3, RNF-01, RNF-03).
 - [ ] Desplegar en Render y medir RNF-02 en producción.

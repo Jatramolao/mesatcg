@@ -1,4 +1,4 @@
-# MesaTCG 🎲
+# MesaTCG
 
 App web para el celular que reúne **dado**, **marcador** e **historial** para partidas presenciales de TCG (Riftbound, Mitos y Leyendas).
 
@@ -8,7 +8,7 @@ App web para el celular que reúne **dado**, **marcador** e **historial** para p
 | | |
 |---|---|
 | **Versión actual** | `v0.1.0`: incremento del Sprint 1 (HU-01 + HU-02) |
-| **Estado** | Sprint 1 implementado · 30/30 pruebas en verde · pendiente: celular real y Sprint Review |
+| **Estado** | Sprint 1 implementado · 34/34 pruebas en verde · pendiente: celular real y Sprint Review |
 | **Trazabilidad detallada** | [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md) |
 | **Bitácora** | [`docs/BITACORA.md`](docs/BITACORA.md) |
 
@@ -40,13 +40,13 @@ Para jugadores de TCG presencial que hoy usan dados físicos y papel, **MesaTCG*
 
 | Prioridad | Historia | Pts | Sprint | Estado |
 |---|---|---|---|---|
-| 1 | HU-01 Lanzar dado | 3 | **Sprint 1** | ✅ Implementada |
-| 2 | HU-02 Marcador de puntaje | 3 | **Sprint 1** | ✅ Implementada |
-| 3 | HU-03 Historial y conservación de la partida | 5 | Sprint 2 | ⏳ Planificada |
-| 4 | HU-04 Contadores adicionales (recursos, turnos) | — | Por refinar | 💭 Emergente |
-| 5 | HU-05 Temporizador de turno | — | Por refinar | 💭 Emergente |
+| 1 | HU-01 Lanzar dado | 3 | **Sprint 1** | Implementada |
+| 2 | HU-02 Marcador de puntaje | 3 | **Sprint 1** | Implementada |
+| 3 | HU-03 Historial y conservación de la partida | 5 | Sprint 2 | Planificada |
+| 4 | HU-04 Contadores adicionales (recursos, turnos) | s/e | Por refinar | Emergente |
+| 5 | HU-05 Temporizador de turno | s/e | Por refinar | Emergente |
 
-HU-04 y HU-05 quedan sin estimar a propósito: el backlog es **DEEP** (detallado arriba, emergente abajo).
+HU-04 y HU-05 quedan sin estimar (s/e) a propósito: el backlog es **DEEP** (detallado arriba, emergente abajo).
 
 ---
 
@@ -101,7 +101,7 @@ Por refinar y estimar según el feedback de la Sprint Review del Sprint 1.
 
 ## 5. Sprints
 
-### Sprint 1: Dado y marcador ✅ implementado
+### Sprint 1: Dado y marcador (implementado)
 
 - **Sprint Goal:** que dos jugadores puedan resolver tiradas y llevar el puntaje de su partida desde un celular.
 - **Sprint Backlog:** HU-01 + HU-02 = **6 pts**. HU-03 queda fuera porque introduce la capa de datos.
@@ -117,7 +117,7 @@ Por refinar y estimar según el feedback de la Sprint Review del Sprint 1.
 | Sprint Review | *Pendiente* (en el guion: el PO pide el resultado del dado más grande y eso ajusta RNF-01) |
 | Retrospective | *Pendiente* (mejora prevista: probar en el celular desde el día 1) |
 
-### Sprint 2: Historial y conservación ⏳ planificado
+### Sprint 2: Historial y conservación (planificado)
 
 - **Sprint Goal (propuesto):** que la partida y su registro sobrevivan a cerrar o recargar la app.
 - **Sprint Backlog:** HU-03 = **5 pts**.
@@ -126,7 +126,7 @@ Por refinar y estimar según el feedback de la Sprint Review del Sprint 1.
   - `eventos`: `{partida_id, hora, jugador, tipo, valor}`, una entrada por cada tirada o cambio de puntaje.
 - **Con esto se completa el MVP** (HU-01 a HU-03).
 
-### Sprint 3 en adelante 💭 emergente
+### Sprint 3 en adelante (emergente)
 
 Refinar, estimar y priorizar HU-04 y HU-05 según el feedback de la Review del Sprint 1.
 
@@ -160,6 +160,15 @@ Refinar, estimar y priorizar HU-04 y HU-05 según el feedback de la Review del S
 | Pruebas | pytest: un test por criterio de aceptación | + pruebas de persistencia |
 | Hosting | Render | Render + Atlas |
 
+### Diseño visual
+
+Campo de batalla medieval, con lenguaje brutalista. Es inspiración de género; no usa elementos de ninguna franquicia.
+
+- **Tipografía:** Grenze Gotisch (gótica) solo en el título y el anuncio del ganador. Big Shoulders Stencil (estarcido militar) para números, nombres y botones. Las dos tienen licencia OFL y están autoalojadas en `app/static/fonts/`, con su licencia al lado.
+- **Color:** hierro y hollín de base, con un solo acento color brasa. Tema oscuro único, pensado para mesas con luz baja.
+- **Forma:** esquinas biseladas como placas de armadura, sin bordes redondeados.
+- **Legibilidad (RNF-01):** botones de 64 px, puntaje de 96 px y dado de 160 px.
+
 **¿Por qué Python y no un solo `index.html`?** Es el stack que domina el equipo y permite verificar cada criterio de aceptación con una prueba automatizada que lleva su nombre (`test_HU02_CA2_restar_nunca_baja_de_cero`). Las reglas viven solo en Python; la interfaz únicamente muestra lo que responde la API.
 
 ### Estructura
@@ -170,9 +179,11 @@ app/
   dominio/marcador.py    HU-02 · RF-03, RF-04, RF-05
   main.py                API: conecta interfaz ↔ dominio
   static/index.html      interfaz · RF-02, RNF-01, RNF-03
+  static/fonts/          fuentes autoalojadas + licencias OFL
 tests/
   test_hu01_dado.py      verifica HU-01 (CA1, CA2, RNF-02, RNF-04)
   test_hu02_marcador.py  verifica HU-02 (CA1, CA2, CA3)
+  test_interfaz.py       verifica RNF-03 (página y fuentes sin servicios externos)
 docs/
   TRAZABILIDAD.md        HU → CA → código → prueba → estado
   BITACORA.md            registro por sesión (Daily, impedimentos, uso de IA)
@@ -186,7 +197,7 @@ render.yaml              configuración de despliegue en Render
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pytest                                           # 30 pruebas, cada una con su HU y CA
+pytest                                           # 34 pruebas, cada una con su HU y CA
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -203,12 +214,12 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ## 9. Guion de demo (orden de la matriz de trazabilidad)
 
-1. **HU-02 CA1:** ingresar "Ana", "Beto" y la meta 3 → el marcador parte en 0 – 0.
+1. **HU-02 CA1:** ingresar "Ana", "Beto" y la meta 3 → el marcador parte en 0 a 0.
 2. **HU-01 CA1:** elegir d6 y lanzar; luego d20 y lanzar → el valor queda en rango.
 3. **HU-01 CA2:** lanzar varias veces → el número grande se reemplaza.
 4. **HU-02 CA2:** pulsar −1 con el marcador en 0 → sigue en 0.
-5. **HU-02 CA3:** sumar hasta la meta → aparece "🏆 ¡Ganó …!" y el marcador se bloquea.
-6. Mostrar `pytest` con las 30 pruebas en verde.
+5. **HU-02 CA3:** sumar hasta la meta → aparece "¡Ganó Beto!" y el marcador se bloquea.
+6. Mostrar `pytest` con las 34 pruebas en verde.
 
 ---
 

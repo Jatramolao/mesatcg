@@ -1,4 +1,4 @@
-# Dependencias de MesaTCG — Sprint 1
+# Dependencias de MesaTCG (Sprint 1)
 # Instalar con:  pip install -r requirements.txt
 fastapi>=0.115          # API web (capa de lógica expuesta por HTTP)
 uvicorn[standard]>=0.30 # servidor que ejecuta la app FastAPI

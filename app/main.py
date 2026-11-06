@@ -7,6 +7,7 @@ llama al dominio y responde en JSON.
 
 Endpoints del Sprint 1
 - GET  /                          → sirve la interfaz (RNF-03: solo navegador)
+- GET  /static/...                → fuentes y archivos de la interfaz
 - GET  /api/dado/tipos            → HU-01 · tipos disponibles (d6, d20)
 - POST /api/dado                  → HU-01 · CA1/CA2 · lanzar dado
 - POST /api/partidas              → HU-02 · CA1 · crear partida (nombres + meta)
@@ -19,11 +20,11 @@ Documentación viva:  http://127.0.0.1:8000/docs  (la genera FastAPI)
 """
 from pathlib import Path
 from typing import Literal
-
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.dominio.dado import TIPOS_DE_DADO, lanzar
@@ -32,6 +33,10 @@ from app.dominio.marcador import Partida, PartidaTerminada
 app = FastAPI(title="MesaTCG", version="0.1.0")
 
 CARPETA_STATIC = Path(__file__).parent / "static"
+
+# Archivos estáticos (fuentes autoalojadas en /static/fonts/).
+# Se sirven desde el mismo servidor: la app no depende de Google Fonts.
+app.mount("/static", StaticFiles(directory=CARPETA_STATIC), name="static")
 
 
 # ---------------------------------------------------------------------------
