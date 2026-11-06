@@ -1,0 +1,7 @@
+# Dependencias de MesaTCG — Sprint 1
+# Instalar con:  pip install -r requirements.txt
+fastapi>=0.115          # API web (capa de lógica expuesta por HTTP)
+uvicorn[standard]>=0.30 # servidor que ejecuta la app FastAPI
+pytest>=8               # pruebas: cada criterio de aceptación es un test
+httpx>=0.27             # lo usa el TestClient de FastAPI en las pruebas
+# Sprint 2 (HU-03) agregará: pymongo  ← NO instalar en el Sprint 1

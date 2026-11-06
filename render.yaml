@@ -1,0 +1,13 @@
+# Despliegue en Render (Blueprint). Render lee este archivo al conectar el repo.
+services:
+  - type: web
+    name: mesatcg
+    runtime: python
+    plan: free                      # duerme tras inactividad: abrir antes de la demo
+    buildCommand: pip install -r requirements.txt
+    # Render entrega el puerto en la variable $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+    # Sprint 2: aquí se agregará MONGODB_URI (como secreto, nunca en el código)

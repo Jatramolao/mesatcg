@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<!--
+  MesaTCG · Interfaz del Sprint 1
+  ================================
+  Pantallas (ver matriz en docs/TRAZABILIDAD.md):
+    1. Configuración  → HU-02 CA1 (nombres + meta)
+    2. Partida        → HU-02 CA2/CA3 (marcador) + HU-01 CA1/CA2 (panel de dado)
+
+  GUÍA
+  - Esta página NO contiene reglas del juego: todo cálculo (rango del dado,
+    mínimo 0, ganador) lo hace la API en Python. Aquí solo se pinta lo que
+    responde el servidor. Si una regla cambia, NO se toca este archivo.
+  - Sin dependencias externas ni build (RNF-03: solo un navegador).
+  - Sin localStorage a propósito: la persistencia es HU-03 (Sprint 2).
+    Si recargas la página, la partida se pierde. Eso es esperado en este sprint.
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- RNF-03 · se adapta al ancho del celular -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14161c">
+  <title>MesaTCG</title>
+  <style>
+    /* ------------------------------------------------------------------
+       Base visual. Fondo oscuro: se lee bien sobre la mesa y no encandila.
+       ------------------------------------------------------------------ */
+    :root {
+      --fondo: #14161c;
+      --panel: #1f232c;
+      --borde: #2e3340;
+      --texto: #f2f3f5;
+      --suave: #9aa1ae;
+      --acento: #f5b301;   /* ámbar: botón principal y resultado del dado */
+      --sumar: #2fbf71;
+      --restar: #e5484d;
+      --radio: 18px;
+      /* RNF-01 · altura mínima de botón: 64px, muy por encima de los
+         44-48px que recomiendan las guías móviles. Fácil con el pulgar. */
+      --toque: 64px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--fondo);
+      color: var(--texto);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      /* evita el zoom por doble toque al marcar puntos rápido */
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    main {
+      max-width: 480px;           /* mobile-first: en desktop se ve como celular */
+      margin: 0 auto;
+      min-height: 100%;
+      padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    h1 { font-size: 1.4rem; margin: 4px 0 0; letter-spacing: .02em; }
+    h1 span { color: var(--acento); }
+    .oculto { display: none !important; }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+      padding: 16px;
+    }
+    label { display: block; font-size: .95rem; color: var(--suave); margin: 12px 0 6px; }
+    input {
+      width: 100%;
+      min-height: var(--toque);
+      font-size: 1.3rem;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid var(--borde);
+      background: var(--fondo);
+      color: var(--texto);
+    }
+    button {
+      min-height: var(--toque);
+      font-size: 1.3rem;
+      font-weight: 700;
+      border: 0;
+      border-radius: 14px;
+      color: var(--texto);
+      background: var(--borde);
+      cursor: pointer;
+    }
+    button:active { transform: scale(.97); }
+    button:disabled { opacity: .35; }
+    .principal { background: var(--acento); color: #1a1400; width: 100%; margin-top: 16px; }
+    .error { color: var(--restar); min-height: 1.2em; margin: 8px 0 0; font-size: .95rem; }
+
+    /* ------------------------------------------------------------------
+       Marcador (HU-02)
+       ------------------------------------------------------------------ */
+    .marcador { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .jugador { text-align: center; padding: 12px; }
+    .jugador .nombre {
+      font-size: 1.1rem; color: var(--suave);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .jugador .puntos { font-size: 4.5rem; font-weight: 800; line-height: 1.1; }
+    .jugador .botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-restar { background: var(--restar); }
+    .btn-sumar  { background: var(--sumar); }
+    .meta { text-align: center; color: var(--suave); margin: 0; }
+    .jugador.lider .puntos { color: var(--acento); }
+
+    /* CA3 · anuncio del ganador: imposible de pasar por alto */
+    .ganador {
+      text-align: center;
+      background: var(--acento);
+      color: #1a1400;
+      border-radius: var(--radio);
+      padding: 16px;
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+
+    /* ------------------------------------------------------------------
+       Panel de dado (HU-01)
+       ------------------------------------------------------------------ */
+    .tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tipos button[aria-pressed="true"] { background: var(--texto); color: var(--fondo); }
+    /* CA2 + RNF-01 · resultado "en grande", legible a 1 m de distancia.
+       ~9rem ≈ 144px de alto de cifra: se lee de un lado al otro de la mesa. */
+    .resultado {
+      font-size: 9rem;
+      font-weight: 800;
+      line-height: 1;
+      text-align: center;
+      color: var(--acento);
+      margin: 12px 0 0;
+      min-height: 1em;
+      font-variant-numeric: tabular-nums;
+    }
+    .resultado-tipo { text-align: center; color: var(--suave); margin: 4px 0 0; min-height: 1.2em; }
+    /* pequeña animación para que se note que la tirada cambió (CA2: reemplaza) */
+    .resultado.nuevo { animation: aparecer .25s ease-out; }
+    @keyframes aparecer { from { transform: scale(.6); opacity: .2; } to { transform: scale(1); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .resultado.nuevo { animation: none; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Mesa<span>TCG</span></h1>
+
+  <!-- ==============================================================
+       Pantalla 1 · Configuración   → HU-02 CA1 / RF-03
+       ============================================================== -->
+  <section id="pantalla-config" class="panel">
+    <form id="form-config" novalidate>
+      <label for="jugador1">Jugador 1</label>
+      <input id="jugador1" maxlength="30" autocomplete="off" required>
+      <label for="jugador2">Jugador 2</label>
+      <input id="jugador2" maxlength="30" autocomplete="off" required>
+      <label for="meta">Meta de puntos</label>
+      <input id="meta" type="number" inputmode="numeric" min="1" max="999" value="8" required>
+      <button class="principal" type="submit">Empezar partida</button>
+      <p id="error-config" class="error" role="alert"></p>
+    </form>
+  </section>
+
+  <!-- ==============================================================
+       Pantalla 2 · Partida
+       ============================================================== -->
+  <section id="pantalla-partida" class="oculto">
+    <!-- HU-02 CA3 · aparece solo cuando alguien alcanza la meta -->
+    <div id="ganador" class="ganador oculto" role="status" aria-live="polite"></div>
+
+    <!-- HU-02 CA2 · marcador de dos jugadores -->
+    <div class="marcador">
+      <div class="panel jugador" data-jugador="0">
+        <div class="nombre"></div>
+        <div class="puntos" aria-live="polite">0</div>
+        <div class="botones">
+          <button class="btn-restar" data-accion="restar" aria-label="Restar 1">−1</button>
+          <button class="btn-sumar" data-accion="sumar" aria-label="Sumar 1">+1</button>
+        </div>
+      </div>
+      <div class="panel jugador" data-jugador="1">
+        <div class="nombre"></div>
+        <div class="puntos" aria-live="polite">0</div>
+        <div class="botones">
+          <button class="btn-restar" data-accion="restar" aria-label="Restar 1">−1</button>
+          <button class="btn-sumar" data-accion="sumar" aria-label="Sumar 1">+1</button>
+        </div>
+      </div>
+    </div>
+    <p id="texto-meta" class="meta"></p>
+
+    <!-- HU-01 · panel de dado -->
+    <div class="panel" style="margin-top:16px">
+      <div id="tipos" class="tipos" role="group" aria-label="Tipo de dado"></div>
+      <div id="resultado" class="resultado" aria-live="polite">–</div>
+      <p id="resultado-tipo" class="resultado-tipo"></p>
+      <button id="btn-lanzar" class="principal">Lanzar</button>
+    </div>
+
+    <!-- Solo visible al terminar: empezar otra partida.
+         (La confirmación antes de borrar es HU-03 CA3, Sprint 2.) -->
+    <button id="btn-nueva" class="principal oculto">Nueva partida</button>
+    <p id="error-partida" class="error" role="alert"></p>
+  </section>
+</main>
+
+<script>
+  // =================================================================
+  // Estado de la interfaz (solo en memoria, sin persistencia: HU-03)
+  // =================================================================
+  let partidaId = null;     // id que entrega la API al crear la partida
+  let tipoDado = "d6";      // tipo seleccionado en el panel de dado
+
+  const $ = (sel) => document.querySelector(sel);
+
+  // Llamada genérica a la API. Devuelve el JSON o lanza un Error con el
+  // mensaje del servidor, para mostrarlo al jugador en vez de fallar en silencio.
+  async function api(metodo, ruta, cuerpo) {
+    const resp = await fetch(ruta, {
+      method: metodo,
+      headers: cuerpo ? { "Content-Type": "application/json" } : {},
+      body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+    });
+    const datos = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      const detalle = Array.isArray(datos.detail) ? "Revisa los datos ingresados" : datos.detail;
+      throw new Error(detalle || "Error de conexión");
+    }
+    return datos;
+  }
+
+  function mostrar(pantalla) {
+    $("#pantalla-config").classList.toggle("oculto", pantalla !== "config");
+    $("#pantalla-partida").classList.toggle("oculto", pantalla !== "partida");
+  }
+
+  // =================================================================
+  // HU-02 CA1 · Configurar partida → ambos marcadores parten en 0
+  // =================================================================
+  $("#form-config").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    $("#error-config").textContent = "";
+    try {
+      const partida = await api("POST", "/api/partidas", {
+        jugador1: $("#jugador1").value,
+        jugador2: $("#jugador2").value,
+        meta: Number($("#meta").value),
+      });
+      partidaId = partida.id;
+      pintarMarcador(partida);
+      $("#resultado").textContent = "–";
+      $("#resultado-tipo").textContent = "";
+      mostrar("partida");
+    } catch (error) {
+      $("#error-config").textContent = error.message;
+    }
+  });
+
+  // =================================================================
+  // HU-02 CA2 · +1 / −1   (el mínimo 0 lo aplica el servidor)
+  // =================================================================
+  document.querySelectorAll(".jugador").forEach((tarjeta) => {
+    tarjeta.addEventListener("click", async (evento) => {
+      const boton = evento.target.closest("button[data-accion]");
+      if (!boton) return;
+      $("#error-partida").textContent = "";
+      try {
+        const partida = await api(
+          "POST",
+          `/api/partidas/${partidaId}/jugadores/${tarjeta.dataset.jugador}/${boton.dataset.accion}`
+        );
+        pintarMarcador(partida);
+      } catch (error) {
+        $("#error-partida").textContent = error.message;
+      }
+    });
+  });
+
+  // Dibuja el marcador con lo que respondió la API (única fuente de verdad).
+  function pintarMarcador(partida) {
+    document.querySelectorAll(".jugador").forEach((tarjeta, i) => {
+      tarjeta.querySelector(".nombre").textContent = partida.nombres[i];
+      tarjeta.querySelector(".puntos").textContent = partida.puntajes[i];
+      const otro = partida.puntajes[1 - i];
+      tarjeta.classList.toggle("lider", partida.puntajes[i] > otro);
+    });
+    $("#texto-meta").textContent = `Meta: ${partida.meta} puntos`;
+
+    // HU-02 CA3 · anunciar ganador y congelar el marcador
+    const hayGanador = partida.ganador !== null;
+    $("#ganador").textContent = hayGanador ? `🏆 ¡Ganó ${partida.ganador}!` : "";
+    $("#ganador").classList.toggle("oculto", !hayGanador);
+    $("#btn-nueva").classList.toggle("oculto", !hayGanador);
+    document.querySelectorAll(".jugador button").forEach((b) => (b.disabled = hayGanador));
+  }
+
+  $("#btn-nueva").addEventListener("click", () => {
+    partidaId = null;
+    mostrar("config");
+  });
+
+  // =================================================================
+  // HU-01 · Panel de dado
+  // =================================================================
+  // Los botones de tipo se generan desde la API (/api/dado/tipos), así la
+  // lista de dados vive en un solo lugar: app/dominio/dado.py
+  async function cargarTipos() {
+    const tipos = await api("GET", "/api/dado/tipos");
+    $("#tipos").innerHTML = "";
+    tipos.forEach((tipo) => {
+      const b = document.createElement("button");
+      b.textContent = tipo;
+      b.setAttribute("aria-pressed", String(tipo === tipoDado));
+      b.addEventListener("click", () => {
+        tipoDado = tipo;
+        document.querySelectorAll("#tipos button")
+          .forEach((x) => x.setAttribute("aria-pressed", String(x.textContent === tipo)));
+      });
+      $("#tipos").appendChild(b);
+    });
+  }
+
+  // CA1 · elegir tipo + "Lanzar" → valor en rango (lo calcula Python)
+  // CA2 · el resultado se muestra en grande y REEMPLAZA al anterior
+  $("#btn-lanzar").addEventListener("click", async () => {
+    $("#error-partida").textContent = "";
+    try {
+      const tirada = await api("POST", "/api/dado", { tipo: tipoDado });
+      const caja = $("#resultado");
+      caja.textContent = tirada.valor;            // reemplaza, no acumula
+      caja.classList.remove("nuevo");
+      void caja.offsetWidth;                       // reinicia la animación
+      caja.classList.add("nuevo");
+      $("#resultado-tipo").textContent = tirada.tipo;
+    } catch (error) {
+      $("#error-partida").textContent = error.message;
+    }
+  });
+
+  cargarTipos().catch(() => {
+    $("#error-config").textContent = "No se pudo conectar con el servidor";
+  });
+</script>
+</body>
+</html>

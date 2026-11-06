@@ -1,0 +1,12 @@
+[project]
+name = "mesatcg"
+version = "0.1.0"           # 0.1.0 = incremento del Sprint 1 (HU-01 + HU-02)
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+# Permite que los tests hagan "from app..." sin instalar el paquete.
+pythonpath = ["."]
+testpaths = ["tests"]
+# -v muestra el nombre de cada test: como los nombres llevan HU y CA,
+# la salida de pytest sirve de evidencia de trazabilidad.
+addopts = "-v"
